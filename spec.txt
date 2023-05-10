@@ -1,0 +1,72 @@
+17-Dec-2019
+
+load
+store
+add
+sub
+mul
+div
+bz
+read
+print
+stop
+
+All instructions act on the accumulator and a given register. How do immediates work?
+
+12-Apr-2023
+
+ldi 0xxx xxxx
+ldr 1000 rrrr
+store 1001 rrrr
+add 1010 rrrr
+sub 1011 rrrr
+read 1100 rrrr
+print 1101 rrrr
+bz  1110 rrrr
+stop 1111 rrrr
+
+This gets us 16 registers, each of which can be immediately-loaded with 7 bits. Probably actually use 8-bit registers. All jumps are indirect, which means the jump target needs to be set up ahead of time, e.g.:
+
+ldi dest_addr
+store 15
+ldr 0
+sub 1
+bz 15
+
+If we wanted more instruction space, we could memory-map the read/print, e.g.:
+ldi  0xxx xxxx Load Immediate
+ldr  1000 rrrr Load Register
+str  1001 rrrr Store Register
+add  1010 rrrr Add
+sub  1011 rrrr Subtract
+bzi  1100 xxxx Branch if Zero Immediate
+brr  1101 rrrr Branch Register
+blr  1110 rrrr Branch with Link Register
+stop 1111 nnnn Stop
+
+This gets us space for several different branch instructions, which is convenient. Branch with linking register jumps indirect, storing a return address into the accumulator. A procedure call thus looks like:
+
+main:
+  ldi procedure
+  str 1
+  blr 1
+  str 0  ; print the return value, 35, from the accumulator
+         ; this uses memory-mapped I/O register 0
+  stop
+
+procedure:
+  str 15 ; 15 is the conventional link register
+  ldi 35 ; 35 is the return value
+  brr 15 ; return
+
+or, in hex:
+05
+91
+E1
+90
+FF
+9F ; begin procedure
+23 ; 35 decimal
+DF ; return
+
+To help with ldi, sub is defined as (reg-acc), not the more usual (acc-reg). This is to help with loading values 129 through 255, which correspond to -127 through -1, using the constant register r0. Because 128 is one of the two two's-complement fixed points, loading it is more fraught.
