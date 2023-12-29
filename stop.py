@@ -1,17 +1,25 @@
 #!/usr/bin/python3
 from tkinter import *
+import sys
 
 nregisters = 16
 
-imem = [0x05, 0x91, 0xE1, 0x90, 0xFF, 0x9F, 0x23, 0xDF]
+#imem = [0x05, 0x91, 0xE1, 0x90, 0xFF, 0x9F, 0x23, 0xDF]
+if(len(sys.argv) < 2):
+    print("Usage: {0} <file.hex>".format(sys.argv[0]))
+    sys.exit(1)
+imem = []
+with open(sys.argv[1], "r") as fp:
+    for l in fp.read().splitlines():
+        imem.append(int(l, base=16))
 
 reg = [0] * nregisters
 opcode = 0
 pc = -1
 accum = 0
 def update():
-    accum_var.set(hex(accum))
-    opcode_var.set(bin(opcode))
+    accum_var.set("0x{:08x}".format(accum))
+    opcode_var.set("0b{:08b}".format(opcode))
     pc_var.set(pc)
     for r in range(nregisters):
         registers_var[r].set(reg[r])
@@ -41,7 +49,6 @@ def step():
     elif(ex_ctrl == 0): # LDR
         accum = reg[rs]
     elif(ex_ctrl == 1): # STR
-        print("rs="+str(rs))
         if(rs == 0):
             print(accum)
         else:
